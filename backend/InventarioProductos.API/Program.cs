@@ -31,6 +31,15 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+builder.Services.AddCors(opciones =>
+{
+    opciones.AddPolicy("PermitirAngular", politica =>
+    {
+        var origenes = builder.Configuration.GetSection("Cors:OrigenesPermitidos").Get<string[]>() ?? Array.Empty<string>();
+        politica.WithOrigins(origenes).AllowAnyHeader().AllowAnyMethod();
+    });
+});
+
 builder.Services.AddDbContext<InventarioContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
@@ -67,6 +76,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseMiddleware<ManejoErroresMiddleware>();
+
+app.UseCors("PermitirAngular");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
