@@ -1,6 +1,7 @@
 using InventarioProductos.API.Data;
 using Microsoft.EntityFrameworkCore;
 using InventarioProductos.API.Services;
+using InventarioProductos.API.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +18,7 @@ builder.Services.AddDbContext<InventarioContext>(options =>
 builder.Services.AddScoped<IProductoService, ProductoService>();
 
 var app = builder.Build();
+app.UseMiddleware<ManejoErroresMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
