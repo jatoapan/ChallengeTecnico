@@ -77,7 +77,70 @@ public class ProductoService : IProductoService
         return await ObtenerAsync(producto.Id);
     }
 
-    private async Task ValidarOfertasAsync(List<OfertaGuardarDto> ofertas)
+    public async Task<ProductoListadoDto> ActualizarAsync(int id, ProductoGuardarDto dto)
+    {
+        var producto = await _context.Productos
+            .Include(p => p.Lotes).ThenInclude(l => l.Inventario)
+            .FirstOrDefaultAsync(p => p.Id == id && p.Estado)
+            ?? throw new NoEncontradoException("El producto no existe.");
+
+        var codigo = dto.Codigo.Trim().ToUpper();
+
+        if (await _context.Productos.AnyAsync(p => p.Codigo == codigo && p.Id != id))
+            throw new ReglaNegocioException("Ya existe un producto con ese código.");
+
+        var idsConservados = dto.Ofertas.Where(o => o.IdLote != null).Select(o => o.IdLote!.Value).ToList();
+
+        if (idsConservados.Any(i => !producto.Lotes.Any(l => l.Id == i)))
+            throw new ReglaNegocioException("Alguno de los lotes no pertenece al producto.");
+
+        await ValidarOfertasAsync(dto.Ofertas, idsConservados);
+
+        producto.Codigo = codigo;
+        producto.Nombre = dto.Nombre.Trim();
+        producto.Descripcion = dto.Descripcion?.Trim();
+
+        foreach (var lote in producto.Lotes.Where(l => l.Estado && !idsConservados.Contains(l.Id)))
+            lote.Estado = false;
+
+        foreach (var oferta in dto.Ofertas)
+        {
+            if (oferta.IdLote == null)
+            {
+                producto.Lotes.Add(new Lote
+                {
+                    IdProveedor = oferta.IdProveedor,
+                    NumeroLote = oferta.NumeroLote.Trim().ToUpper(),
+                    Estado = true,
+                    Inventario = new Inventario { Precio = oferta.Precio, Stock = oferta.Stock }
+                });
+                continue;
+            }
+
+            var existente = producto.Lotes.First(l => l.Id == oferta.IdLote);
+            existente.IdProveedor = oferta.IdProveedor;
+            existente.NumeroLote = oferta.NumeroLote.Trim().ToUpper();
+            existente.Estado = true;
+            existente.Inventario!.Precio = oferta.Precio;
+            existente.Inventario.Stock = oferta.Stock;
+            existente.Inventario.FechaActualizacion = DateTime.Now;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return await ObtenerAsync(id);
+    }
+
+    public async Task EliminarAsync(int id)
+    {
+        var producto = await _context.Productos.FirstOrDefaultAsync(p => p.Id == id && p.Estado)
+            ?? throw new NoEncontradoException("El producto no existe.");
+
+        producto.Estado = false;
+        await _context.SaveChangesAsync();
+    }
+
+    private async Task ValidarOfertasAsync(List<OfertaGuardarDto> ofertas, List<int>? idsLotesPropios = null)
     {
         var lotes = ofertas.Select(o => o.NumeroLote.Trim().ToUpper()).ToList();
 
@@ -90,7 +153,9 @@ public class ProductoService : IProductoService
         if (existentes != idsProveedor.Count)
             throw new ReglaNegocioException("Alguno de los proveedores no existe o está inactivo.");
 
-        if (await _context.Lotes.AnyAsync(l => lotes.Contains(l.NumeroLote)))
+        var propios = idsLotesPropios ?? new List<int>();
+
+        if (await _context.Lotes.AnyAsync(l => lotes.Contains(l.NumeroLote) && !propios.Contains(l.Id)))
             throw new ReglaNegocioException("Alguno de los números de lote ya está registrado.");
     }
 
