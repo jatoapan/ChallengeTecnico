@@ -1,5 +1,6 @@
 using InventarioProductos.API.Data;
 using Microsoft.EntityFrameworkCore;
+using InventarioProductos.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,8 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<InventarioContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+
+builder.Services.AddScoped<IProductoService, ProductoService>();
 
 var app = builder.Build();
 
