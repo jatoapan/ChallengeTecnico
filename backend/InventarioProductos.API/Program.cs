@@ -16,6 +16,7 @@ builder.Services.AddDbContext<InventarioContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
 builder.Services.AddScoped<IProductoService, ProductoService>();
+builder.Services.AddScoped<IProveedorService, ProveedorService>();
 
 var app = builder.Build();
 app.UseMiddleware<ManejoErroresMiddleware>();
