@@ -19,6 +19,13 @@ builder.Services.AddScoped<IProductoService, ProductoService>();
 builder.Services.AddScoped<IProveedorService, ProveedorService>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<InventarioContext>();
+    await SembradoUsuarios.EjecutarAsync(context);
+}
+
 app.UseMiddleware<ManejoErroresMiddleware>();
 
 // Configure the HTTP request pipeline.
