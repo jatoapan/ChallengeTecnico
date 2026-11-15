@@ -7,8 +7,12 @@ using Microsoft.EntityFrameworkCore;
 using InventarioProductos.API.Services;
 using InventarioProductos.API.Middlewares;
 using Microsoft.OpenApi;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((contexto, configuracion) =>
+    configuracion.ReadFrom.Configuration(contexto.Configuration));
 
 // Add services to the container.
 
@@ -74,6 +78,8 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<InventarioContext>();
     await SembradoUsuarios.EjecutarAsync(context);
 }
+
+app.UseSerilogRequestLogging();
 
 app.UseMiddleware<ManejoErroresMiddleware>();
 
