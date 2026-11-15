@@ -24,4 +24,17 @@ public class ProductosController : ControllerBase
         var resultado = await _productoService.ListarAsync(buscar, pagina, tamanoPagina);
         return Ok(resultado);
     }
+
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<ProductoListadoDto>> Obtener(int id)
+    {
+        return Ok(await _productoService.ObtenerAsync(id));
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<ProductoListadoDto>> Crear([FromBody] ProductoGuardarDto dto)
+    {
+        var creado = await _productoService.CrearAsync(dto);
+        return CreatedAtAction(nameof(Obtener), new { id = creado.Id }, creado);
+    }
 }
