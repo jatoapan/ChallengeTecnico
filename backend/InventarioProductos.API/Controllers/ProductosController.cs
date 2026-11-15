@@ -1,10 +1,12 @@
 using InventarioProductos.API.DTOs;
 using InventarioProductos.API.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace InventarioProductos.API.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class ProductosController : ControllerBase
 {
@@ -45,6 +47,7 @@ public class ProductosController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> Eliminar(int id)
     {
         await _productoService.EliminarAsync(id);
