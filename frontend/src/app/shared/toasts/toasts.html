@@ -1,11 +1,17 @@
-<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100">
+<!-- Abajo a la derecha: así no tapa el título ni las acciones de la pantalla. -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
   @for (n of servicio.notificaciones(); track n.id) {
     <div class="toast show align-items-center text-white border-0 mb-2"
          [class.bg-success]="n.tipo === 'exito'"
          [class.bg-danger]="n.tipo === 'error'"
          role="alert">
       <div class="d-flex">
-        <div class="toast-body">{{ n.mensaje }}</div>
+        <div class="toast-body">
+          @if (n.titulo) {
+            <strong class="d-block">{{ n.titulo }}</strong>
+          }
+          {{ n.mensaje }}
+        </div>
         <button type="button" class="btn-close btn-close-white me-2 m-auto"
                 aria-label="Cerrar" (click)="servicio.cerrar(n.id)"></button>
       </div>

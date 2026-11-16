@@ -6,6 +6,7 @@ export interface Notificacion {
   id: number;
   tipo: TipoNotificacion;
   mensaje: string;
+  titulo?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -13,21 +14,21 @@ export class NotificacionService {
   private contador = 0;
   readonly notificaciones = signal<Notificacion[]>([]);
 
-  exito(mensaje: string): void {
-    this.mostrar('exito', mensaje);
+  exito(mensaje: string, titulo?: string): void {
+    this.mostrar('exito', mensaje, titulo);
   }
 
-  error(mensaje: string): void {
-    this.mostrar('error', mensaje);
+  error(mensaje: string, titulo?: string): void {
+    this.mostrar('error', mensaje, titulo);
   }
 
   cerrar(id: number): void {
     this.notificaciones.update(lista => lista.filter(n => n.id !== id));
   }
 
-  private mostrar(tipo: TipoNotificacion, mensaje: string): void {
+  private mostrar(tipo: TipoNotificacion, mensaje: string, titulo?: string): void {
     const id = ++this.contador;
-    this.notificaciones.update(lista => [...lista, { id, tipo, mensaje }]);
+    this.notificaciones.update(lista => [...lista, { id, tipo, mensaje, titulo }]);
     setTimeout(() => this.cerrar(id), 5000);
   }
 }
