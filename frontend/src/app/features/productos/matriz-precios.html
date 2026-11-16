@@ -1,0 +1,83 @@
+<app-encabezado titulo="Comparativo de precios" descripcion="Precio de cada producto según el proveedor." />
+
+<form class="input-group mb-3" role="search" [formGroup]="filtros" (ngSubmit)="buscarProductos()">
+  <label for="buscar-matriz" class="visually-hidden">Buscar productos</label>
+  <input id="buscar-matriz" type="search" class="form-control" placeholder="Buscar por código o nombre"
+         formControlName="buscar">
+  <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i> Buscar</button>
+</form>
+
+@if (cargando()) {
+  <div class="tabla-panel text-center py-5 mb-3" role="status">
+    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Cargando comparativo…
+  </div>
+} @else if (!filas().length) {
+  <div class="tabla-panel mb-3">
+    @if (busquedaAplicada()) {
+      <app-estado-vacio icono="bi-search" titulo="Ningún producto coincide con «{{ busquedaAplicada() }}»"
+                        mensaje="Revise el código o el nombre, o limpie la búsqueda.">
+        <button type="button" class="btn btn-outline-secondary" (click)="limpiarBusqueda()">Limpiar búsqueda</button>
+      </app-estado-vacio>
+    } @else {
+      <app-estado-vacio icono="bi-grid-3x3" titulo="Aún no hay precios para comparar"
+                        mensaje="El comparativo se llena cuando los productos tienen lotes de proveedores." />
+    }
+  </div>
+} @else {
+  <!-- tabindex y nombre: en móvil la tabla se desliza y debe poder recorrerse con el teclado. -->
+  <div class="tabla-panel table-responsive mb-3" tabindex="0" role="region"
+       aria-label="Comparativo de precios por proveedor">
+    <table class="table matriz align-middle mb-0">
+      <thead>
+        <tr>
+          <th scope="col" class="col-fija">Producto</th>
+          @for (prov of proveedores(); track prov.id) {
+            <th scope="col" class="text-end text-nowrap">Precio {{ prov.nombre }}</th>
+          }
+          <th scope="col" class="text-end text-nowrap">Total producto</th>
+          <th scope="col" class="text-end">PVP</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (fila of filas(); track fila.id) {
+          <tr>
+            <th scope="row" class="col-fija fw-semibold">{{ fila.nombre }}</th>
+            @for (precio of fila.precios; track $index) {
+              <td class="text-end text-nowrap">
+                @if (precio === null) {
+                  <span class="text-body-secondary" aria-hidden="true">—</span><span class="visually-hidden">Sin oferta</span>
+                } @else {
+                  <span class="chip">{{ precio | currency }}</span>
+                }
+              </td>
+            }
+            <td class="text-end text-nowrap"><span class="chip total">{{ fila.total | currency }}</span></td>
+            <td class="text-end text-nowrap"><span class="chip pvp">{{ fila.pvp | currency }}</span></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <section class="tabla-panel totales-acumulados mb-3" aria-labelledby="titulo-totales">
+    <div class="me-auto">
+      <h2 id="titulo-totales" class="h6 fw-semibold mb-0">Totales acumulados</h2>
+      <p class="small text-body-secondary mb-0">Suma total de precios cotizados por cada proveedor</p>
+    </div>
+    @for (prov of proveedores(); track prov.id) {
+      <div class="total-proveedor">
+        <div class="small text-body-secondary">{{ prov.nombre }}</div>
+        <div class="fw-semibold cifras">{{ totales()[$index] | currency }}</div>
+      </div>
+    }
+    <div class="total-proveedor gran-total">
+      <div class="small">Gran total</div>
+      <div class="fw-bold cifras">{{ granTotal() | currency }}</div>
+    </div>
+  </section>
+}
+
+@if (resultado(); as r) {
+  <app-paginacion [pagina]="pagina()" [total]="r.total" [tamanoPagina]="r.tamanoPagina"
+                  (cambiar)="cambiarPagina($event)" />
+}

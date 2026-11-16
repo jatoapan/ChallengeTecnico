@@ -1,0 +1,71 @@
+// Colores de la paleta (ver styles.scss).
+$pizarra: #1e2a33;
+$acero: #2f5d8a;
+$verde: #2a7149;
+
+// Columna del producto fija al deslizar la tabla en móvil.
+.col-fija {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 10rem;
+  background: #fff;
+  box-shadow: inset -1px 0 rgba($pizarra, 0.12);
+}
+
+thead .col-fija {
+  background: inherit;
+}
+
+.matriz {
+  > :not(caption) > * > * {
+    padding: 0.875rem 1rem;
+  }
+}
+
+// Precio como etiqueta (pill): azul grisáceo; el total en verde y el PVP en azul acero.
+.chip {
+  display: inline-block;
+  padding: 0.2rem 0.75rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: $pizarra;
+  background: color-mix(in srgb, $pizarra 8%, #fff);
+  border-radius: 999px;
+}
+
+.chip.total {
+  font-weight: 600;
+  color: darken($verde, 8%);
+  background: color-mix(in srgb, $verde 12%, #fff);
+}
+
+.chip.pvp {
+  font-weight: 600;
+  color: darken($acero, 6%);
+  background: color-mix(in srgb, $acero 12%, #fff);
+}
+
+// Tarjeta con el total acumulado de cada proveedor y el gran total.
+.totales-acumulados {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+}
+
+.total-proveedor {
+  min-width: 7rem;
+  padding: 0.5rem 0.875rem;
+  text-align: right;
+  background: color-mix(in srgb, $pizarra 4%, #fff);
+  border: 1px solid rgba($pizarra, 0.12);
+  border-radius: 0.5rem;
+}
+
+.total-proveedor.gran-total {
+  color: #fff;
+  background: $pizarra;
+  border-color: $pizarra;
+}
