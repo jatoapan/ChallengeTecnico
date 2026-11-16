@@ -34,6 +34,7 @@ public class ProductosController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Administrador")]
     public async Task<ActionResult<ProductoListadoDto>> Crear([FromBody] ProductoGuardarDto dto)
     {
         var creado = await _productoService.CrearAsync(dto);
@@ -41,6 +42,7 @@ public class ProductosController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "Administrador")]
     public async Task<ActionResult<ProductoListadoDto>> Actualizar(int id, [FromBody] ProductoGuardarDto dto)
     {
         return Ok(await _productoService.ActualizarAsync(id, dto));
