@@ -50,11 +50,14 @@
               }
             </td>
             @if (auth.tieneRol('Administrador')) {
-              <td class="text-end">
-                <a [routerLink]="['/productos', p.id, 'editar']" class="btn btn-outline-primary btn-sm">
-                  <i class="bi bi-pencil"></i> Editar
-                </a>
-              </td>
+            <td class="text-end text-nowrap">
+              <a [routerLink]="['/productos', p.id, 'editar']" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-pencil"></i> Editar
+              </a>
+              <button type="button" class="btn btn-outline-danger btn-sm ms-1" (click)="pedirEliminar(p)">
+                <i class="bi bi-trash"></i> Eliminar
+              </button>
+            </td>
             }
           </tr>
         } @empty {
@@ -74,3 +77,25 @@
             (click)="cambiarPagina(pagina + 1)">Siguiente</button>
   </div>
 </nav>
+
+@if (porEliminar(); as producto) {
+  <div class="modal-backdrop fade show"></div>
+  <div class="modal fade show d-block" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Eliminar producto</h5>
+          <button type="button" class="btn-close" (click)="cancelarEliminar()"></button>
+        </div>
+        <div class="modal-body">
+          ¿Seguro que quieres eliminar <strong>{{ producto.codigo }} - {{ producto.nombre }}</strong>?
+          Se desactivarán también sus lotes.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="cancelarEliminar()">Cancelar</button>
+          <button type="button" class="btn btn-danger" (click)="confirmarEliminar()">Eliminar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

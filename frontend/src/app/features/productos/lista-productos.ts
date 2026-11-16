@@ -5,6 +5,7 @@ import { Paginado, Producto } from '../../core/models/producto.model';
 import { ProductoService } from '../../core/services/producto.service';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { NotificacionService } from '../../core/services/notificacion.service';
 
 @Component({
   selector: 'app-lista-productos',
@@ -14,7 +15,9 @@ import { AuthService } from '../../core/services/auth.service';
 export class ListaProductos implements OnInit {
   private productos = inject(ProductoService);
   auth = inject(AuthService);
-  
+  private notificaciones = inject(NotificacionService);
+  porEliminar = signal<Producto | null>(null);
+
   resultado = signal<Paginado<Producto> | null>(null);
   cargando = signal(false);
   buscar = '';
@@ -45,6 +48,33 @@ export class ListaProductos implements OnInit {
   cambiarPagina(pagina: number): void {
     this.pagina = pagina;
     this.cargar();
+  }
+
+  pedirEliminar(producto: Producto): void {
+    this.porEliminar.set(producto);
+  }
+
+  cancelarEliminar(): void {
+    this.porEliminar.set(null);
+  }
+
+  confirmarEliminar(): void {
+    const producto = this.porEliminar();
+    if (!producto) return;
+
+    this.productos.eliminar(producto.id).subscribe({
+      next: () => {
+        this.notificaciones.exito('Producto eliminado.');
+        this.porEliminar.set(null);
+
+        // si era el único de la página, retrocede una
+        if (this.resultado()?.items.length === 1 && this.pagina > 1) {
+          this.pagina--;
+        }
+        this.cargar();
+      },
+      error: () => this.porEliminar.set(null)
+    });
   }
 
   get totalPaginas(): number {
