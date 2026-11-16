@@ -1,0 +1,57 @@
+// Colores de la paleta (ver styles.scss).
+$pizarra: #1e2a33;
+
+// --- Accesos rápidos ---
+.accesos {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+
+// Cada acción reparte por igual la altura para que la tarjeta llene el espacio junto a "Últimos lotes".
+.accesos li {
+  display: flex;
+  flex: 1 1 0;
+  border-bottom: 1px solid rgba($pizarra, 0.1);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.accesos a {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1.25rem;
+  color: inherit;
+  text-decoration: none;
+
+  i {
+    font-size: 1.25rem;
+    color: #2f5d8a;
+  }
+
+  &:hover {
+    background: rgba($pizarra, 0.04);
+  }
+}
+
+// --- Bienvenida: franja oscura con el nombre y el rol ---
+.bienvenida {
+  padding: 1.25rem 1.5rem;
+  color: #fff;
+  background: $pizarra;
+  border-left: 4px solid #d99a1e;
+  border-radius: 0.5rem;
+
+  h1 {
+    color: inherit;
+  }
+
+  .rol {
+    font-weight: 600;
+    color: #f2c14e;
+  }
+}

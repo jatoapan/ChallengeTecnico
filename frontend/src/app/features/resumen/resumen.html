@@ -1,0 +1,153 @@
+<section class="bienvenida mb-4" aria-labelledby="titulo-panel">
+  <h1 id="titulo-panel" class="h3 mb-1">Hola, {{ auth.usuario() }}</h1>
+  <p class="mb-0">
+    Panel principal del inventario · <span class="rol">{{ auth.rol() }}</span>
+  </p>
+</section>
+
+@if (cargando()) {
+  <div class="tabla-panel text-center py-5 mb-3" role="status">
+    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Cargando resumen…
+  </div>
+} @else if (datos(); as d) {
+  <!-- Métricas: una sola pieza dividida en cuatro celdas -->
+  <dl class="totales totales-resumen tabla-panel mb-4">
+    <div>
+      <dt>Total de productos</dt>
+      <dd class="cifras">{{ d.totalProductos }}</dd>
+    </div>
+    <div>
+      <dt>Stock total (unidades)</dt>
+      <dd class="cifras">{{ d.stockTotal | number }}</dd>
+    </div>
+    <div>
+      <dt>Proveedores activos</dt>
+      <dd class="cifras">{{ d.totalProveedores }}</dd>
+    </div>
+    <div [class.alerta-roja]="d.lotesStockBajo > 0">
+      <dt>Stock crítico (lotes con ≤ {{ d.umbral }})</dt>
+      <dd class="cifras">{{ d.lotesStockBajo }}</dd>
+    </div>
+  </dl>
+
+  <div class="row g-4 mb-4">
+    <section class="col-12 col-xl-8" aria-labelledby="titulo-ultimos">
+      <div class="d-flex justify-content-between align-items-baseline mb-3">
+        <h2 id="titulo-ultimos" class="h5 mb-0">Última actividad</h2>
+        <a routerLink="/inventario" class="small">Ver todos</a>
+      </div>
+      @if (!d.ultimosLotes.length) {
+        <div class="tabla-panel">
+          <app-estado-vacio icono="bi-boxes" titulo="Aún no hay lotes registrados" />
+        </div>
+      } @else {
+        <div class="tabla-panel table-responsive">
+          <table class="table align-middle mb-0">
+            <thead>
+              <tr>
+                <th scope="col">Producto</th>
+                <th scope="col">Proveedor y lote</th>
+                <th scope="col" class="text-end">Precio</th>
+                <th scope="col" class="text-end">Stock</th>
+                <th scope="col" class="text-end">Actualizado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of d.ultimosLotes; track l.idLote) {
+                <tr>
+                  <td>
+                    <div>{{ l.producto }}</div>
+                    <div class="small text-body-secondary">{{ l.codigoProducto }}</div>
+                  </td>
+                  <td>
+                    <div>{{ l.proveedor }}</div>
+                    <span class="lote">{{ l.numeroLote }}</span>
+                  </td>
+                  <td class="text-end fw-semibold cifras text-nowrap">{{ l.precio | currency }}</td>
+                  <td class="text-end cifras">{{ l.stock }}</td>
+                  <td class="text-end text-body-secondary cifras text-nowrap">{{ l.fechaActualizacion | date: 'dd/MM HH:mm' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    <!-- Acciones rápidas según el rol -->
+    <section class="col-12 col-xl-4 d-flex flex-column" aria-labelledby="titulo-accesos">
+      <h2 id="titulo-accesos" class="h5 mb-3">Acciones rápidas</h2>
+      <ul class="tabla-panel list-unstyled accesos flex-grow-1">
+        @for (a of accesos; track a.titulo) {
+          <li>
+            <a [routerLink]="a.ruta" [queryParams]="a.consulta">
+              <i class="bi {{ a.icono }}" aria-hidden="true"></i>
+              <span>
+                <span class="d-block fw-semibold">{{ a.titulo }}</span>
+                <span class="d-block small text-body-secondary">{{ a.detalle }}</span>
+              </span>
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+  </div>
+
+  <div class="row g-4">
+    <section class="col-12" aria-labelledby="titulo-reponer">
+      <h2 id="titulo-reponer" class="h5 mb-3">Lotes por reponer</h2>
+
+      @if (!d.porReponer.length) {
+        <div class="tabla-panel">
+          <app-estado-vacio icono="bi-check2-circle" titulo="Todo el inventario está abastecido"
+                            mensaje="Ningún lote tiene {{ d.umbral }} unidades o menos." />
+        </div>
+      } @else {
+        <div class="tabla-panel table-responsive mb-2">
+          <table class="table align-middle mb-0">
+            <thead>
+              <tr>
+                <th scope="col">Producto</th>
+                <th scope="col">Proveedor y lote</th>
+                <th scope="col">Stock</th>
+                <th scope="col" class="text-end"><span class="visually-hidden">Acción</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of d.porReponer; track l.idLote) {
+                <tr>
+                  <td>
+                    <div>{{ l.producto }}</div>
+                    <div class="small text-body-secondary">{{ l.codigoProducto }}</div>
+                  </td>
+                  <td>
+                    <div>{{ l.proveedor }}</div>
+                    <span class="lote">{{ l.numeroLote }}</span>
+                  </td>
+                  <td>
+                    @if (l.stock === 0) {
+                      <span class="badge text-bg-danger">Sin stock</span>
+                    } @else {
+                      <span class="badge text-bg-warning cifras">Quedan {{ l.stock }}</span>
+                    }
+                  </td>
+                  <td class="text-end">
+                    <a routerLink="/inventario" [queryParams]="{ buscar: l.numeroLote }">
+                      Ajustar<span class="visually-hidden"> el lote {{ l.numeroLote }}</span>
+                    </a>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (d.lotesStockBajo > d.porReponer.length) {
+          <p class="small text-body-secondary">
+            Se muestran {{ d.porReponer.length }} de {{ d.lotesStockBajo }} lotes con stock bajo.
+          </p>
+        }
+      }
+    </section>
+
+  </div>
+}

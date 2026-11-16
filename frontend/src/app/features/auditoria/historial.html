@@ -1,0 +1,126 @@
+<app-encabezado titulo="Auditoría de cambios" descripcion="Quién hizo qué y cuándo. Los registros no se pueden modificar." />
+
+<!-- Estadísticas de los registros filtrados -->
+@if (estadisticas(); as e) {
+  <dl class="totales tabla-panel mb-3" aria-label="Resumen de la auditoría">
+    <div>
+      <dt>Total de registros</dt>
+      <dd class="cifras">{{ e.total }}</dd>
+    </div>
+    <div>
+      <dt>Inicios de sesión</dt>
+      <dd class="cifras">{{ contar('Ingreso') }}</dd>
+    </div>
+    <div class="alerta-roja">
+      <dt>Accesos fallidos</dt>
+      <dd class="cifras">{{ contar('IngresoFallido', 'Bloqueo') }}</dd>
+    </div>
+    <div class="alerta-ambar">
+      <dt>Cambios en datos</dt>
+      <dd class="cifras">{{ contar('Crear', 'Actualizar', 'Ajustar', 'Eliminar', 'Reactivar') }}</dd>
+    </div>
+  </dl>
+}
+
+<!-- Filtros -->
+<app-barra-filtros [grupo]="filtros" idBuscar="filtro-buscar" placeholder="Buscar por usuario o detalle"
+                   [activos]="contarFiltros()" (buscar)="aplicarFiltros()" (limpiar)="limpiarFiltros()">
+  <div class="col-12 col-md-6 col-lg-3">
+    <label for="filtro-accion" class="form-label">Acción</label>
+    <select id="filtro-accion" class="form-select" [formControl]="filtros.controls.accion">
+      <option value="">Todas las acciones</option>
+      @for (a of listaAcciones; track a) {
+        <option [value]="a">{{ acciones[a].texto }}</option>
+      }
+    </select>
+  </div>
+  <div class="col-12 col-md-6 col-lg-3">
+    <label for="filtro-entidad" class="form-label">Registro</label>
+    <select id="filtro-entidad" class="form-select" [formControl]="filtros.controls.entidad">
+      <option value="">Todos los registros</option>
+      @for (e of entidades; track e) {
+        <option [value]="e">{{ nombreEntidad(e) }}</option>
+      }
+    </select>
+  </div>
+  <div class="col-6 col-lg-3">
+    <label for="filtro-desde" class="form-label">Desde</label>
+    <input id="filtro-desde" type="date" class="form-control" [formControl]="filtros.controls.desde">
+  </div>
+  <div class="col-6 col-lg-3">
+    <label for="filtro-hasta" class="form-label">Hasta</label>
+    <input id="filtro-hasta" type="date" class="form-control" [formControl]="filtros.controls.hasta">
+  </div>
+</app-barra-filtros>
+
+@if (cargando()) {
+  <div class="tabla-panel text-center py-5 mb-3" role="status">
+    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Cargando auditoría…
+  </div>
+} @else if (!resultado()?.items?.length) {
+  <div class="tabla-panel mb-3">
+    @if (hayFiltros()) {
+      <app-estado-vacio icono="bi-funnel" titulo="Ningún registro coincide con los filtros">
+        <button type="button" class="btn btn-outline-secondary" (click)="limpiarFiltros()">Quitar filtros</button>
+      </app-estado-vacio>
+    } @else {
+      <app-estado-vacio icono="bi-clock-history" titulo="Todavía no hay registros"
+                        mensaje="Aquí aparecerá cada inicio de sesión, cada cambio en productos, lotes y proveedores y cada ajuste de inventario." />
+    }
+  </div>
+} @else {
+  <!-- Móvil: tarjetas, para que el detalle se lea sin deslizar. -->
+  <ul class="list-unstyled d-md-none mb-3">
+    @for (r of resultado()?.items; track r.id) {
+      <li class="card mb-2">
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="badge" [class]="acciones[r.accion].color">{{ acciones[r.accion].texto }}</span>
+            <span class="text-body-secondary small cifras">{{ r.fecha | date: 'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="small mb-1">{{ r.detalle }}</div>
+          <div class="text-body-secondary small">
+            <i class="bi bi-person me-1" aria-hidden="true"></i>{{ r.usuario }}@if (r.rol) { ({{ r.rol }})} · {{ registro(r) }}
+            @if (r.ip) { · IP {{ r.ip }} }
+          </div>
+        </div>
+      </li>
+    }
+  </ul>
+
+  <!-- Desde md: tabla. -->
+  <div class="tabla-panel table-responsive d-none d-md-block mb-3">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Usuario</th>
+          <th>Acción</th>
+          <th>Registro</th>
+          <th>Detalle</th>
+          <th>IP</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of resultado()?.items; track r.id) {
+          <tr>
+            <td class="text-nowrap small cifras">{{ r.fecha | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <td class="text-nowrap">
+              <i class="bi bi-person me-1" aria-hidden="true"></i>{{ r.usuario }}
+              @if (r.rol) { <div class="small text-body-secondary">{{ r.rol }}</div> }
+            </td>
+            <td><span class="badge" [class]="acciones[r.accion].color">{{ acciones[r.accion].texto }}</span></td>
+            <td class="text-nowrap small">{{ registro(r) }}</td>
+            <td class="small" style="min-width: 16rem">{{ r.detalle }}</td>
+            <td class="small text-body-secondary text-nowrap cifras">{{ r.ip || '—' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (resultado(); as r) {
+  <app-paginacion [pagina]="pagina()" [total]="r.total" [tamanoPagina]="r.tamanoPagina"
+                  (cambiar)="cambiarPagina($event)" />
+}
