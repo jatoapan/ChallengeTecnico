@@ -23,7 +23,6 @@ docker compose ps
 echo
 ./scripts/verificar.sh
 echo
-PUERTO="$(grep -E '^PUERTO_WEB=' .env | cut -d= -f2)"
-ORIGEN="$(grep -E '^ORIGEN_PUBLICO=' .env | cut -d= -f2)"
+ORIGEN="$(grep -E '^ORIGEN_PUBLICO=' .env | cut -d= -f2-)"
 echo "Listo. La primera vez la base tarda ~1 minuto en crearse."
-echo "Abre: ${ORIGEN}$([ "${PUERTO:-80}" != "80" ] && echo ":${PUERTO}")"
+echo "Abre: ${ORIGEN}"

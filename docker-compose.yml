@@ -1,7 +1,7 @@
-# Despliegue completo: base de datos + API + front (Nginx). Un solo comando:
+# Despliegue completo: base de datos + API + front (Nginx) + Caddy (HTTPS). Un solo comando:
 #   docker compose up -d --build
 # Los valores sensibles vienen del archivo .env (que NO se sube a Git; ver .env.example).
-# Solo el puerto del front se publica hacia afuera: la API y la base quedan en la red interna de Docker.
+# Solo Caddy (80 y 443) se publica hacia afuera: Nginx, la API y la base quedan en la red interna de Docker.
 services:
   sqlserver:
     build: ./DB
@@ -45,8 +45,27 @@ services:
     depends_on:
       - api
     ports:
-      - "${PUERTO_WEB:-80}:80"
+      # Solo accesible desde la propia máquina (para verificar el despliegue); el público entra por Caddy.
+      - "127.0.0.1:${PUERTO_LOCAL:-8081}:80"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+    environment:
+      DOMINIO: ${DOMINIO:-localhost}
+    ports:
+      - "${PUERTO_HTTP:-80}:80"
+      - "${PUERTO_HTTPS:-443}:443"
+      - "${PUERTO_HTTPS:-443}:443/udp"
+    volumes:
+      - ./proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data      # aquí se guardan los certificados: no se vuelven a pedir en cada despliegue
+      - caddy_config:/config
 
 volumes:
   sqldata:
   apilogs:
+  caddy_data:
+  caddy_config:
