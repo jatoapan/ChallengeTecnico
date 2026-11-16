@@ -1,11 +1,12 @@
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
+using InventarioProductos.API.Common;
 using InventarioProductos.API.Data;
 using Microsoft.EntityFrameworkCore;
 using InventarioProductos.API.Services;
-using InventarioProductos.API.Middlewares;
 using Microsoft.OpenApi;
 using Serilog;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +23,17 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Inventario de Productos API",
+        Version = "v1",
+        Description = "CRUD de productos con ofertas por proveedor y lote. Autenticación con JWT."
+    });
+
+    // Comentarios /// de los controladores y DTOs
+    var archivoXml = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, archivoXml));
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Type = SecuritySchemeType.Http,
@@ -51,7 +63,20 @@ builder.Services.AddDbContext<InventarioContext>(options =>
 builder.Services.AddScoped<IProductoService, ProductoService>();
 builder.Services.AddScoped<IProveedorService, ProveedorService>();
 builder.Services.AddScoped<IInventarioService, InventarioService>();
+builder.Services.AddScoped<IResumenService, ResumenService>();
+builder.Services.AddScoped<ILoteService, LoteService>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+// Singleton: la cuenta de intentos debe sobrevivir entre peticiones.
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<IRegistroIntentosLogin, RegistroIntentosLoginMemoria>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUsuarioActual, UsuarioActual>();
+builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
+
+// Errores globales: el manejador traduce cada excepción a ProblemDetails (400, 404, 429 o 500).
+builder.Services.AddExceptionHandler<ManejadorErroresGlobal>();
+builder.Services.AddProblemDetails();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -76,27 +101,41 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             {
                 contexto.HandleResponse();
                 contexto.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                await contexto.Response.WriteAsJsonAsync(new ProblemDetails
-                {
-                    Status = 401,
-                    Title = "No autenticado",
-                    Detail = "Debes iniciar sesión para acceder a este recurso."
-                });
+                await contexto.Response.WriteAsJsonAsync(ProblemaHttp.Crear(contexto.HttpContext, 401,
+                    "No autenticado", "Debes iniciar sesión para acceder a este recurso."));
             },
             OnForbidden = async contexto =>
             {
                 contexto.Response.StatusCode = StatusCodes.Status403Forbidden;
-                await contexto.Response.WriteAsJsonAsync(new ProblemDetails
-                {
-                    Status = 403,
-                    Title = "Acceso denegado",
-                    Detail = "No tienes permisos para realizar esta acción."
-                });
+                await contexto.Response.WriteAsJsonAsync(ProblemaHttp.Crear(contexto.HttpContext, 403,
+                    "Acceso denegado", "No tienes permisos para realizar esta acción."));
             }
         };
     });
 
-builder.Services.AddAuthorization();
+// Políticas por acción: los controladores piden una acción, aquí se decide qué roles la tienen.
+builder.Services.AddAuthorization(opciones =>
+{
+    // Denegar por defecto: todo endpoint exige sesión salvo los marcados con [AllowAnonymous].
+    opciones.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+
+    opciones.AddPolicy(Politicas.GestionarProductos, politica =>
+        politica.RequireRole("Administrador"));
+
+    opciones.AddPolicy(Politicas.AjustarInventario, politica =>
+        politica.RequireRole("Operador", "Administrador"));
+
+    opciones.AddPolicy(Politicas.VerAuditoria, politica =>
+        politica.RequireRole("Administrador"));
+
+    opciones.AddPolicy(Politicas.GestionarProveedores, politica =>
+        politica.RequireRole("Administrador"));
+
+    opciones.AddPolicy(Politicas.GestionarUsuarios, politica =>
+        politica.RequireRole("Administrador"));
+});
 
 var app = builder.Build();
 
@@ -108,7 +147,8 @@ using (var scope = app.Services.CreateScope())
 
 app.UseSerilogRequestLogging();
 
-app.UseMiddleware<ManejoErroresMiddleware>();
+// Middleware oficial de errores: llama a ManejadorErroresGlobal cuando algo falla más adelante en el pipeline.
+app.UseExceptionHandler();
 
 app.UseCors("PermitirAngular");
 
