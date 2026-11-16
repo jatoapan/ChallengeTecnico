@@ -10,6 +10,9 @@ public static class SembradoUsuarios
         if (await context.Usuarios.AnyAsync())
             return;
 
+        // Los roles los crea createDB.sql; aquí solo se buscan por nombre.
+        var roles = await context.Roles.ToDictionaryAsync(r => r.Nombre, r => r.Id);
+
         context.Usuarios.AddRange(
             new Usuario
             {
@@ -18,7 +21,7 @@ public static class SembradoUsuarios
                 NombreUsuario = "admin",
                 Email = "admin@inventario.com",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123*"),
-                Rol = "Administrador",
+                IdRol = roles["Administrador"],
                 Estado = true
             },
             new Usuario
@@ -28,7 +31,7 @@ public static class SembradoUsuarios
                 NombreUsuario = "operador",
                 Email = "operador@inventario.com",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("Operador123*"),
-                Rol = "Operador",
+                IdRol = roles["Operador"],
                 Estado = true
             });
 

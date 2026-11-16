@@ -8,7 +8,9 @@ public class Usuario
     public string NombreUsuario { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
-    public string Rol { get; set; } = string.Empty;
+    public int IdRol { get; set; }
     public bool Estado { get; set; }
     public DateTime FechaCreacion { get; set; }
+
+    public Rol Rol { get; set; } = null!;
 }

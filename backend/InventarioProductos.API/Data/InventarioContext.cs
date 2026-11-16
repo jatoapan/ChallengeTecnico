@@ -7,19 +7,28 @@ public class InventarioContext : DbContext
 {
     public InventarioContext(DbContextOptions<InventarioContext> options) : base(options) { }
 
+    public DbSet<Rol> Roles => Set<Rol>();
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<Proveedor> Proveedores => Set<Proveedor>();
     public DbSet<Producto> Productos => Set<Producto>();
     public DbSet<Lote> Lotes => Set<Lote>();
     public DbSet<Inventario> Inventarios => Set<Inventario>();
+    public DbSet<Auditoria> Auditorias => Set<Auditoria>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Rol>(e =>
+        {
+            e.ToTable("Rol");
+            e.Property(x => x.FechaCreacion).HasDefaultValueSql("GETDATE()");
+        });
+
         modelBuilder.Entity<Usuario>(e =>
         {
             e.ToTable("Usuario");
             e.Property(x => x.NombreUsuario).HasColumnName("usuario");
             e.Property(x => x.FechaCreacion).HasDefaultValueSql("GETDATE()");
+            e.HasOne(x => x.Rol).WithMany(r => r.Usuarios).HasForeignKey(x => x.IdRol);
         });
 
         modelBuilder.Entity<Proveedor>(e =>
@@ -52,6 +61,12 @@ public class InventarioContext : DbContext
             e.Property(x => x.FechaActualizacion).HasDefaultValueSql("GETDATE()");
 
             e.HasOne(x => x.Lote).WithOne(l => l.Inventario).HasForeignKey<Inventario>(x => x.IdLote);
+        });
+
+        modelBuilder.Entity<Auditoria>(e =>
+        {
+            e.ToTable("Auditoria");
+            e.Property(x => x.Fecha).HasDefaultValueSql("GETDATE()");
         });
     }
 }
