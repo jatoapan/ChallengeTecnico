@@ -24,10 +24,10 @@ concurrency:
 jobs:
   api:
     name: API (.NET)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
       - name: Compilar
@@ -42,13 +42,13 @@ jobs:
 
   front:
     name: Front (Angular)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -61,9 +61,9 @@ jobs:
 
   imagenes:
     name: Imágenes de Docker
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Validar el compose y construir las tres imágenes
         env:
           # Valores falsos: solo sirven para que el compose se pueda interpretar. No son secretos reales.
@@ -78,7 +78,7 @@ jobs:
     # Solo en push a main (nunca en pull requests, incluidos los de forks) y solo si ya se configuró AWS.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.EC2_INSTANCE_ID != ''
     needs: [api, front, imagenes]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # El entorno "produccion" permite exigir aprobación manual y limitar desde qué rama se despliega.
     environment: produccion
     permissions:
@@ -86,7 +86,7 @@ jobs:
       contents: read
     steps:
       - name: Credenciales temporales de AWS (OIDC, sin claves guardadas)
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
