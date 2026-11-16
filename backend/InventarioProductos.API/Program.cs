@@ -8,6 +8,7 @@ using InventarioProductos.API.Services;
 using InventarioProductos.API.Middlewares;
 using Microsoft.OpenApi;
 using Serilog;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,6 +68,31 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             NameClaimType = ClaimTypes.Name,
             RoleClaimType = ClaimTypes.Role,
             ClockSkew = TimeSpan.Zero
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = async contexto =>
+            {
+                contexto.HandleResponse();
+                contexto.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await contexto.Response.WriteAsJsonAsync(new ProblemDetails
+                {
+                    Status = 401,
+                    Title = "No autenticado",
+                    Detail = "Debes iniciar sesión para acceder a este recurso."
+                });
+            },
+            OnForbidden = async contexto =>
+            {
+                contexto.Response.StatusCode = StatusCodes.Status403Forbidden;
+                await contexto.Response.WriteAsJsonAsync(new ProblemDetails
+                {
+                    Status = 403,
+                    Title = "Acceso denegado",
+                    Detail = "No tienes permisos para realizar esta acción."
+                });
+            }
         };
     });
 

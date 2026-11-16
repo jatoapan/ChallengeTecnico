@@ -1,15 +1,16 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { Paginado, Producto } from '../../core/models/producto.model';
 import { ProductoService } from '../../core/services/producto.service';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificacionService } from '../../core/services/notificacion.service';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Oferta, Paginado, Producto } from '../../core/models/producto.model';
+import { InventarioService } from '../../core/services/inventario.service';
 
 @Component({
   selector: 'app-lista-productos',
-  imports: [FormsModule, CurrencyPipe, RouterLink],
+  imports: [FormsModule, ReactiveFormsModule, CurrencyPipe, RouterLink],
   templateUrl: './lista-productos.html'
 })
 export class ListaProductos implements OnInit {
@@ -17,6 +18,15 @@ export class ListaProductos implements OnInit {
   auth = inject(AuthService);
   private notificaciones = inject(NotificacionService);
   porEliminar = signal<Producto | null>(null);
+  private inventario = inject(InventarioService);
+  private fb = inject(FormBuilder);
+
+  ajuste = signal<{ producto: Producto; oferta: Oferta } | null>(null);
+
+  formularioAjuste = this.fb.nonNullable.group({
+    precio: [0, [Validators.required, Validators.min(0)]],
+    stock: [0, [Validators.required, Validators.min(0)]]
+  });
 
   resultado = signal<Paginado<Producto> | null>(null);
   cargando = signal(false);
@@ -74,6 +84,33 @@ export class ListaProductos implements OnInit {
         this.cargar();
       },
       error: () => this.porEliminar.set(null)
+    });
+  }
+
+    abrirAjuste(producto: Producto, oferta: Oferta): void {
+    this.formularioAjuste.reset({ precio: oferta.precio, stock: oferta.stock });
+    this.ajuste.set({ producto, oferta });
+  }
+
+  cerrarAjuste(): void {
+    this.ajuste.set(null);
+  }
+
+  guardarAjuste(): void {
+    const actual = this.ajuste();
+    if (!actual) return;
+
+    if (this.formularioAjuste.invalid) {
+      this.formularioAjuste.markAllAsTouched();
+      return;
+    }
+
+    this.inventario.ajustar(actual.oferta.idLote, this.formularioAjuste.getRawValue()).subscribe({
+      next: () => {
+        this.notificaciones.exito('Inventario actualizado.');
+        this.ajuste.set(null);
+        this.cargar();
+      }
     });
   }
 

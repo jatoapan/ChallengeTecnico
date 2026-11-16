@@ -46,6 +46,11 @@
                   <span [class.text-danger]="o.stock <= 10" [class.fw-bold]="o.stock <= 10">
                     Stock {{ o.stock }}
                   </span>
+                  @if (auth.tieneRol('Operador')) {
+                    <button type="button" class="btn btn-link btn-sm p-0 ms-2" (click)="abrirAjuste(p, o)">
+                      <i class="bi bi-sliders"></i> Ajustar
+                    </button>
+                  }
                 </div>
               }
             </td>
@@ -96,6 +101,43 @@
           <button type="button" class="btn btn-danger" (click)="confirmarEliminar()">Eliminar</button>
         </div>
       </div>
+    </div>
+  </div>
+}
+
+@if (ajuste(); as a) {
+  <div class="modal-backdrop fade show"></div>
+  <div class="modal fade show d-block" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" [formGroup]="formularioAjuste" (ngSubmit)="guardarAjuste()" novalidate>
+        <div class="modal-header">
+          <h5 class="modal-title">Ajustar inventario</h5>
+          <button type="button" class="btn-close" (click)="cerrarAjuste()"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small mb-3">
+            {{ a.producto.nombre }} · {{ a.oferta.proveedor }} · Lote {{ a.oferta.numeroLote }}
+          </p>
+          <div class="row g-3">
+            <div class="col-6">
+              <label class="form-label">Precio</label>
+              <input type="number" min="0" step="0.01" class="form-control" formControlName="precio"
+                     [class.is-invalid]="formularioAjuste.controls.precio.invalid && formularioAjuste.controls.precio.touched">
+              <div class="invalid-feedback">Mínimo 0.</div>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Stock</label>
+              <input type="number" min="0" step="1" class="form-control" formControlName="stock"
+                     [class.is-invalid]="formularioAjuste.controls.stock.invalid && formularioAjuste.controls.stock.touched">
+              <div class="invalid-feedback">Mínimo 0.</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="cerrarAjuste()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
     </div>
   </div>
 }
