@@ -1,0 +1,4 @@
+# Los scripts de shell deben tener saltos de línea LF para ejecutarse en Linux (Docker, AWS),
+# aunque se clonen en Windows.
+*.sh text eol=lf
+Dockerfile text eol=lf

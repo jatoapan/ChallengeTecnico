@@ -1,15 +1,52 @@
+# Despliegue completo: base de datos + API + front (Nginx). Un solo comando:
+#   docker compose up -d --build
+# Los valores sensibles vienen del archivo .env (que NO se sube a Git; ver .env.example).
+# Solo el puerto del front se publica hacia afuera: la API y la base quedan en la red interna de Docker.
 services:
   sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: sqlserver
+    build: ./DB
+    restart: unless-stopped
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Falta MSSQL_SA_PASSWORD en el archivo .env}
+      MSSQL_MEMORY_LIMIT_MB: ${MSSQL_MEMORY_LIMIT_MB:-1536}
     ports:
-      - "1433:1433"
+      # Solo accesible desde la propia máquina (para trabajar en local); nunca desde internet.
+      - "127.0.0.1:${PUERTO_SQL:-1433}:1433"
     volumes:
       - sqldata:/var/opt/mssql
-      - ./DB:/scripts
+    healthcheck:
+      # Sano cuando la base ya existe y tiene sus datos iniciales (no basta con que SQL Server esté encendido).
+      test: ["CMD-SHELL", "SQLCMDPASSWORD=$$MSSQL_SA_PASSWORD /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -b -Q \"IF NOT EXISTS (SELECT 1 FROM InventarioProductos.dbo.Inventario) RAISERROR('sin datos',16,1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: "Server=sqlserver,1433;Database=InventarioProductos;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True"
+      Jwt__Clave: ${JWT_CLAVE:?Falta JWT_CLAVE en el archivo .env}
+      Cors__OrigenesPermitidos__0: ${ORIGEN_PUBLICO:-http://localhost}
+      Swagger__Habilitado: ${SWAGGER_HABILITADO:-false}
+      Https__Redirigir: "false"
+    volumes:
+      - apilogs:/app/logs
+
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "${PUERTO_WEB:-80}:80"
 
 volumes:
   sqldata:
+  apilogs:
