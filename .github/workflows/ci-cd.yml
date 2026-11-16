@@ -1,0 +1,124 @@
+# CI/CD del Inventario de Productos.
+#  - CI (api, front, imagenes): en cada push y pull request compila, prueba y valida los Dockerfile.
+#  - CD (desplegar): solo en push a main y solo si las 3 pruebas pasan. Entra a la EC2 con AWS Systems
+#    Manager (SSM), sin abrir el puerto 22 ni guardar claves SSH, y ejecuta scripts/desplegar.sh.
+# El despliegue se activa cuando existen las variables del repositorio AWS_ROLE_ARN, AWS_REGION y
+# EC2_INSTANCE_ID (Settings > Secrets and variables > Actions > Variables). Mientras no existan, solo corre el CI.
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Permisos mínimos por defecto: solo leer el código.
+permissions:
+  contents: read
+
+# Un despliegue a la vez: si llegan dos pushes seguidos, el segundo espera al primero.
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  api:
+    name: API (.NET)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Compilar
+        run: dotnet build backend/InventarioProductos.API --configuration Release
+      - name: Paquetes con vulnerabilidades conocidas
+        run: |
+          dotnet list backend/InventarioProductos.API package --vulnerable --include-transitive | tee vulnerables.txt
+          if grep -q "has the following vulnerable packages" vulnerables.txt; then
+            echo "::error::Hay paquetes NuGet con vulnerabilidades conocidas."
+            exit 1
+          fi
+
+  front:
+    name: Front (Angular)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Pruebas unitarias
+        run: npx ng test --watch=false
+      - name: Compilar en producción
+        run: npx ng build --configuration production
+
+  imagenes:
+    name: Imágenes de Docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validar el compose y construir las tres imágenes
+        env:
+          # Valores falsos: solo sirven para que el compose se pueda interpretar. No son secretos reales.
+          MSSQL_SA_PASSWORD: ci-no-es-un-secreto
+          JWT_CLAVE: ci-no-es-un-secreto
+        run: |
+          docker compose config --quiet
+          docker compose build
+
+  desplegar:
+    name: Desplegar en AWS
+    # Solo en push a main (nunca en pull requests, incluidos los de forks) y solo si ya se configuró AWS.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.EC2_INSTANCE_ID != ''
+    needs: [api, front, imagenes]
+    runs-on: ubuntu-latest
+    # El entorno "produccion" permite exigir aprobación manual y limitar desde qué rama se despliega.
+    environment: produccion
+    permissions:
+      id-token: write   # necesario para pedir credenciales temporales a AWS (OIDC)
+      contents: read
+    steps:
+      - name: Credenciales temporales de AWS (OIDC, sin claves guardadas)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Ejecutar el despliegue en la EC2 (SSM)
+        env:
+          INSTANCIA: ${{ vars.EC2_INSTANCE_ID }}
+        run: |
+          # Se ejecuta como el usuario "ubuntu" para que Git y Docker usen sus permisos.
+          COMANDO="sudo -u ubuntu -H bash -lc 'cd ~/ChallengeTecnico && ./scripts/desplegar.sh'"
+
+          ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCIA" \
+            --document-name AWS-RunShellScript \
+            --comment "Despliegue ${GITHUB_SHA::7}" \
+            --parameters "commands=[\"$COMANDO\"]" \
+            --query Command.CommandId --output text)
+          echo "Comando SSM: $ID"
+
+          # Esperar hasta 20 minutos (el waiter de la CLI solo espera ~100 s y la construcción tarda más).
+          for _ in $(seq 1 120); do
+            ESTADO=$(aws ssm get-command-invocation --command-id "$ID" --instance-id "$INSTANCIA" \
+              --query Status --output text 2>/dev/null || echo Pending)
+            case "$ESTADO" in Pending|InProgress|Delayed) sleep 10 ;; *) break ;; esac
+          done
+
+          echo "Estado final: $ESTADO"
+          aws ssm get-command-invocation --command-id "$ID" --instance-id "$INSTANCIA" \
+            --query StandardOutputContent --output text | tail -40
+          if [ "$ESTADO" != "Success" ]; then
+            aws ssm get-command-invocation --command-id "$ID" --instance-id "$INSTANCIA" \
+              --query StandardErrorContent --output text | tail -20
+            echo "::error::El despliegue terminó en estado $ESTADO"
+            exit 1
+          fi
