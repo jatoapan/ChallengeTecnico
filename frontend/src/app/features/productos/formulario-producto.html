@@ -1,0 +1,100 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">{{ id ? 'Editar producto' : 'Nuevo producto' }}</h1>
+  <a routerLink="/productos" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left"></i> Volver
+  </a>
+</div>
+
+<form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-12 col-md-4">
+          <label for="codigo" class="form-label">Código</label>
+          <input id="codigo" class="form-control" formControlName="codigo"
+                 [class.is-invalid]="invalido(formulario.controls.codigo)">
+          <div class="invalid-feedback">El código es obligatorio (máximo 10 caracteres).</div>
+        </div>
+
+        <div class="col-12 col-md-8">
+          <label for="nombre" class="form-label">Nombre</label>
+          <input id="nombre" class="form-control" formControlName="nombre"
+                 [class.is-invalid]="invalido(formulario.controls.nombre)">
+          <div class="invalid-feedback">El nombre es obligatorio (máximo 60 caracteres).</div>
+        </div>
+
+        <div class="col-12">
+          <label for="descripcion" class="form-label">Descripción</label>
+          <textarea id="descripcion" rows="2" class="form-control" formControlName="descripcion"
+                    [class.is-invalid]="invalido(formulario.controls.descripcion)"></textarea>
+          <div class="invalid-feedback">La descripción no puede superar 255 caracteres.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span class="fw-semibold">Proveedores, lotes y precios</span>
+      <button type="button" class="btn btn-outline-primary btn-sm" (click)="agregarOferta()">
+        <i class="bi bi-plus-lg"></i> Agregar proveedor
+      </button>
+    </div>
+
+    <div class="card-body" formArrayName="ofertas">
+      @for (oferta of ofertas.controls; track oferta; let i = $index) {
+        <div class="row g-2 align-items-start mb-3" [formGroupName]="i">
+          <div class="col-12 col-md-3">
+            <label class="form-label small mb-1">Proveedor</label>
+            <select class="form-select" formControlName="idProveedor"
+                    [class.is-invalid]="invalido(oferta.controls.idProveedor)">
+              <option [ngValue]="0">Seleccione...</option>
+              @for (p of proveedores(); track p.id) {
+                <option [ngValue]="p.id">{{ p.nombre }}</option>
+              }
+            </select>
+            <div class="invalid-feedback">Seleccione un proveedor.</div>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <label class="form-label small mb-1">Lote</label>
+            <input class="form-control" formControlName="numeroLote"
+                   [class.is-invalid]="invalido(oferta.controls.numeroLote)">
+            <div class="invalid-feedback">Obligatorio (máx. 20 caracteres).</div>
+          </div>
+
+          <div class="col-3 col-md-2">
+            <label class="form-label small mb-1">Precio</label>
+            <input type="number" min="0" step="0.01" class="form-control" formControlName="precio"
+                   [class.is-invalid]="invalido(oferta.controls.precio)">
+            <div class="invalid-feedback">Mínimo 0.</div>
+          </div>
+
+          <div class="col-3 col-md-2">
+            <label class="form-label small mb-1">Stock</label>
+            <input type="number" min="0" step="1" class="form-control" formControlName="stock"
+                   [class.is-invalid]="invalido(oferta.controls.stock)">
+            <div class="invalid-feedback">Mínimo 0.</div>
+          </div>
+
+          <div class="col-12 col-md-2 text-md-end pt-md-4">
+            <button type="button" class="btn btn-outline-danger btn-sm"
+                    [disabled]="ofertas.length === 1" (click)="quitarOferta(i)">
+              <i class="bi bi-trash"></i> Quitar
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary" [disabled]="guardando()">
+      @if (guardando()) {
+        <span class="spinner-border spinner-border-sm me-2"></span>
+      }
+      Guardar
+    </button>
+    <a routerLink="/productos" class="btn btn-outline-secondary">Cancelar</a>
+  </div>
+</form>

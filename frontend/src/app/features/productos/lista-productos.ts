@@ -3,15 +3,18 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Paginado, Producto } from '../../core/models/producto.model';
 import { ProductoService } from '../../core/services/producto.service';
+import { RouterLink } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-lista-productos',
-  imports: [FormsModule, CurrencyPipe],
+  imports: [FormsModule, CurrencyPipe, RouterLink],
   templateUrl: './lista-productos.html'
 })
 export class ListaProductos implements OnInit {
   private productos = inject(ProductoService);
-
+  auth = inject(AuthService);
+  
   resultado = signal<Paginado<Producto> | null>(null);
   cargando = signal(false);
   buscar = '';
