@@ -1,0 +1,62 @@
+<h1 class="h3 mb-3">Productos</h1>
+
+<form class="input-group mb-3" (ngSubmit)="buscarProductos()">
+  <input type="text" class="form-control" name="buscar" [(ngModel)]="buscar"
+         placeholder="Buscar por código o nombre">
+  <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i> Buscar</button>
+</form>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Código</th>
+          <th>Producto</th>
+          <th>Proveedores, lotes y precios</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of resultado()?.items; track p.id) {
+          <tr>
+            <td class="fw-semibold">{{ p.codigo }}</td>
+            <td>
+              <div>{{ p.nombre }}</div>
+              @if (p.descripcion) {
+                <div class="small text-muted">{{ p.descripcion }}</div>
+              }
+            </td>
+            <td>
+              @for (o of p.ofertas; track o.idLote) {
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                  <span class="badge text-bg-primary">{{ o.proveedor }}</span>
+                  <span class="small text-muted">{{ o.numeroLote }}</span>
+                  <span class="fw-semibold">{{ o.precio | currency }}</span>
+                  <span class="small" [class.text-danger]="o.stock <= 10">Stock: {{ o.stock }}</span>
+                </div>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="3" class="text-center text-muted py-4">
+              @if (cargando()) { Cargando... } @else { No hay productos para mostrar. }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <span class="small text-muted">
+      Total: {{ resultado()?.total ?? 0 }} productos | Página {{ pagina }} de {{ totalPaginas }}
+    </span>
+    <div class="btn-group btn-group-sm">
+      <button class="btn btn-outline-secondary" [disabled]="pagina <= 1"
+              (click)="cambiarPagina(pagina - 1)">Anterior</button>
+      <button class="btn btn-outline-secondary" [disabled]="pagina >= totalPaginas"
+              (click)="cambiarPagina(pagina + 1)">Siguiente</button>
+    </div>
+  </div>
+</div>
