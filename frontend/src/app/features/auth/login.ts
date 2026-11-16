@@ -7,7 +7,8 @@ import { NotificacionService } from '../../core/services/notificacion.service';
 @Component({
   selector: 'app-login',
   imports: [ReactiveFormsModule],
-  templateUrl: './login.html'
+  templateUrl: './login.html',
+  styleUrl: './login.scss'
 })
 export class Login {
   private fb = inject(FormBuilder);
@@ -34,7 +35,7 @@ export class Login {
     this.auth.login(this.formulario.getRawValue()).subscribe({
       next: respuesta => {
         this.notificaciones.exito(`Bienvenido, ${respuesta.usuario}.`);
-        this.router.navigate(['/productos']);
+        this.router.navigate(['/']);
       },
       error: () => this.cargando.set(false)
     });

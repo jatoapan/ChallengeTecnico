@@ -1,11 +1,54 @@
-<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light p-3">
-  <div class="card shadow-sm w-100" style="max-width: 400px">
-    <div class="card-body p-4">
-      <div class="text-center mb-4">
-        <i class="bi bi-box-seam fs-1 text-primary"></i>
-        <h1 class="h4 mt-2">Inventario de Productos</h1>
-        <p class="text-muted mb-0">Inicie sesión para continuar</p>
-      </div>
+<div class="login">
+  <!-- Panel de marca: en escritorio ocupa la mitad izquierda; en móvil es una franja superior. -->
+  <section class="panel">
+    <div class="marca">
+      <i class="bi bi-box-seam" aria-hidden="true"></i>
+      <span>Inventario</span>
+    </div>
+
+    <!-- Estantería de bodega dibujada en SVG: decorativa, sin imágenes externas. -->
+    <svg class="estanteria" viewBox="0 0 420 300" aria-hidden="true" focusable="false">
+      <g class="repisa">
+        <rect x="10" y="92" width="400" height="6" />
+        <rect x="10" y="192" width="400" height="6" />
+        <rect x="10" y="292" width="400" height="6" />
+        <rect x="10" y="10" width="6" height="288" />
+        <rect x="404" y="10" width="6" height="288" />
+      </g>
+      <g class="caja">
+        <rect x="30" y="38" width="70" height="54" />
+        <rect x="108" y="54" width="52" height="38" />
+        <rect x="236" y="30" width="86" height="62" />
+        <rect x="330" y="60" width="56" height="32" />
+        <rect x="30" y="150" width="56" height="42" />
+        <rect x="160" y="128" width="92" height="64" />
+        <rect x="260" y="156" width="48" height="36" />
+        <rect x="58" y="244" width="88" height="48" />
+        <rect x="154" y="260" width="60" height="32" />
+        <rect x="300" y="236" width="86" height="56" />
+      </g>
+      <g class="caja-acero">
+        <rect x="168" y="44" width="60" height="48" />
+        <rect x="94" y="140" width="58" height="52" />
+        <rect x="316" y="132" width="70" height="60" />
+        <rect x="222" y="226" width="70" height="66" />
+      </g>
+      <!-- Etiquetas de lote en ámbar, como las de la tabla de productos -->
+      <g class="etiqueta">
+        <rect x="186" y="62" width="24" height="10" />
+        <rect x="110" y="160" width="24" height="10" />
+        <rect x="337" y="154" width="28" height="10" />
+        <rect x="245" y="250" width="24" height="10" />
+      </g>
+    </svg>
+
+    <p class="lema">Precio y stock de cada producto, por proveedor y por lote.</p>
+  </section>
+
+  <main class="acceso">
+    <div class="contenedor-formulario">
+      <h1 class="h3 mb-1">Iniciar sesión</h1>
+      <p class="text-body-secondary mb-4">Use su usuario y contraseña de la empresa.</p>
 
       <form [formGroup]="formulario" (ngSubmit)="ingresar()" novalidate>
         <div class="mb-3">
@@ -13,7 +56,7 @@
           <input id="usuario" type="text" class="form-control" formControlName="usuario"
                  autocomplete="username"
                  [class.is-invalid]="formulario.controls.usuario.invalid && formulario.controls.usuario.touched">
-          <div class="invalid-feedback">El usuario es obligatorio.</div>
+          <div class="invalid-feedback">Escriba su usuario.</div>
         </div>
 
         <div class="mb-4">
@@ -24,21 +67,22 @@
                    [type]="verClave() ? 'text' : 'password'"
                    [class.is-invalid]="formulario.controls.password.invalid && formulario.controls.password.touched">
             <button type="button" class="btn btn-outline-secondary"
-                    aria-label="Mostrar u ocultar contraseña"
+                    [attr.aria-label]="verClave() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                    [attr.aria-pressed]="verClave()"
                     (click)="verClave.set(!verClave())">
-              <i class="bi" [class.bi-eye]="!verClave()" [class.bi-eye-slash]="verClave()"></i>
+              <i class="bi" [class.bi-eye]="!verClave()" [class.bi-eye-slash]="verClave()" aria-hidden="true"></i>
             </button>
-            <div class="invalid-feedback">La contraseña es obligatoria.</div>
+            <div class="invalid-feedback">Escriba su contraseña.</div>
           </div>
         </div>
 
         <button type="submit" class="btn btn-primary w-100" [disabled]="cargando()">
           @if (cargando()) {
-            <span class="spinner-border spinner-border-sm me-2"></span>
+            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
           }
           Iniciar sesión
         </button>
       </form>
     </div>
-  </div>
+  </main>
 </div>

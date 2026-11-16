@@ -1,0 +1,146 @@
+// Colores de la paleta (ver styles.scss).
+$pizarra: #1e2a33;
+$ambar: #d99a1e;
+$ancho-menu: 16.5rem;
+
+// --- Enlace para saltar al contenido (solo visible con el teclado) ---
+.saltar {
+  position: absolute;
+  left: 0.5rem;
+  top: -3rem;
+  z-index: 1100;
+  padding: 0.5rem 0.75rem;
+  background: #fff;
+  color: $pizarra;
+  border-radius: 0.25rem;
+
+  &:focus {
+    top: 0.5rem;
+  }
+}
+
+.marca {
+  font-weight: 600;
+  font-size: 1.125rem;
+  color: #fff;
+}
+
+// --- Barra superior (móvil) ---
+.barra-movil {
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 3.5rem;
+  padding: 0 0.75rem;
+  background: $pizarra;
+}
+
+// --- Menú lateral ---
+.menu {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 1040;
+  display: flex;
+  flex-direction: column;
+  width: $ancho-menu;
+  background: $pizarra;
+  color: rgba(#fff, 0.85);
+
+  // En móvil queda fuera de la pantalla hasta que se abre. visibility: hidden evita
+  // que sus enlaces reciban el foco con Tab mientras está cerrado.
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition: transform 0.2s ease-out, visibility 0s linear 0.2s;
+
+  &.abierto {
+    transform: none;
+    visibility: visible;
+    transition: transform 0.2s ease-out;
+  }
+
+  @media (min-width: 992px) {
+    transform: none;
+    visibility: visible;
+  }
+}
+
+.menu-marca {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 3.5rem;
+  padding: 0 1.25rem;
+  border-bottom: 1px solid rgba(#fff, 0.08);
+}
+
+nav {
+  flex: 1;
+  padding: 0.75rem 0;
+}
+
+// El enlace activo lleva una franja ámbar a la izquierda: como la etiqueta de un estante.
+.menu-enlace {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1.25rem;
+  color: rgba(#fff, 0.78);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+
+  i {
+    font-size: 1.1rem;
+  }
+
+  &:hover {
+    color: #fff;
+    background: rgba(#fff, 0.05);
+  }
+
+  &.activo {
+    color: #fff;
+    font-weight: 500;
+    background: rgba(#fff, 0.08);
+    border-left-color: $ambar;
+  }
+
+  &:focus-visible {
+    outline-color: $ambar;
+    outline-offset: -2px;
+  }
+}
+
+.menu-usuario {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(#fff, 0.08);
+  color: #fff;
+
+  .rol {
+    color: rgba(#fff, 0.7);
+  }
+}
+
+.fondo-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 1030;
+  background: rgba($pizarra, 0.5);
+}
+
+// --- Contenido ---
+.contenido {
+  padding: 1.5rem 1rem 2rem;
+  outline: none;
+
+  @media (min-width: 992px) {
+    margin-left: $ancho-menu;
+    padding: 2rem 2.5rem 3rem;
+  }
+
+  @media (min-width: 1400px) {
+    padding-inline: 3.5rem;
+  }
+}

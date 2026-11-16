@@ -1,15 +1,55 @@
-<nav class="navbar navbar-dark bg-dark">
-  <div class="container d-flex flex-wrap gap-2">
-    <span class="navbar-brand mb-0 h1"><i class="bi bi-box-seam me-2"></i>Inventario</span>
-    <div class="d-flex align-items-center gap-3 text-white">
-      <span class="small"><i class="bi bi-person-circle me-1"></i>{{ auth.usuario() }} · {{ auth.rol() }}</span>
-      <button class="btn btn-outline-light btn-sm" (click)="salir()">
-        <i class="bi bi-box-arrow-right"></i> Salir
-      </button>
-    </div>
-  </div>
-</nav>
+<a class="saltar" href="#contenido">Saltar al contenido</a>
 
-<main class="container py-4">
+<!-- Barra superior: solo en pantallas pequeñas -->
+<header class="barra-movil d-lg-none">
+  <button type="button" class="btn btn-link text-white p-1" (click)="alternarMenu()"
+          [attr.aria-expanded]="menuAbierto()" aria-controls="menu-lateral" aria-label="Abrir menú">
+    <i class="bi bi-list fs-3"></i>
+  </button>
+  <span class="marca"><i class="bi bi-box-seam me-2"></i>Inventario</span>
+</header>
+
+@if (menuAbierto()) {
+  <div class="fondo-menu d-lg-none" (click)="cerrarMenu()"></div>
+}
+
+<aside id="menu-lateral" class="menu" [class.abierto]="menuAbierto()">
+  <div class="menu-marca">
+    <span class="marca"><i class="bi bi-box-seam me-2"></i>Inventario</span>
+    <button type="button" class="btn btn-link text-white p-1 d-lg-none" (click)="cerrarMenu()" aria-label="Cerrar menú">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <nav aria-label="Principal">
+    <ul class="list-unstyled m-0">
+      @for (enlace of enlaces; track enlace.ruta) {
+        @if (visible(enlace)) {
+          <li>
+            <a class="menu-enlace" [routerLink]="enlace.ruta" routerLinkActive="activo"
+               ariaCurrentWhenActive="page">
+              <i class="bi {{ enlace.icono }}" aria-hidden="true"></i>{{ texto(enlace) }}
+            </a>
+          </li>
+        }
+      }
+    </ul>
+  </nav>
+
+  <div class="menu-usuario">
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <i class="bi bi-person-circle fs-4" aria-hidden="true"></i>
+      <div class="lh-sm">
+        <div class="fw-semibold">{{ auth.usuario() }}</div>
+        <div class="small rol">{{ auth.rol() }}</div>
+      </div>
+    </div>
+    <button type="button" class="btn btn-outline-light btn-sm w-100" (click)="salir()">
+      <i class="bi bi-box-arrow-right me-1"></i>Cerrar sesión
+    </button>
+  </div>
+</aside>
+
+<main id="contenido" class="contenido" tabindex="-1">
   <router-outlet />
 </main>
