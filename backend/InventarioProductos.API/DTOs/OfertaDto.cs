@@ -6,6 +6,7 @@ public class OfertaDto
     public string NumeroLote { get; set; } = string.Empty;
     public int IdProveedor { get; set; }
     public string Proveedor { get; set; } = string.Empty;
+    public decimal Costo { get; set; }
     public decimal Precio { get; set; }
     public int Stock { get; set; }
 }

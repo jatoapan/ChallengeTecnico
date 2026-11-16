@@ -1,9 +1,11 @@
 namespace InventarioProductos.API.DTOs;
 
-public class PaginadoDto<T>
+public class ProductoListadoDto
 {
-    public List<T> Items { get; set; } = new();
-    public int Total { get; set; }
-    public int Pagina { get; set; }
-    public int TamanoPagina { get; set; }
+    public int Id { get; set; }
+    public string Codigo { get; set; } = string.Empty;
+    public string Nombre { get; set; } = string.Empty;
+    public string? Descripcion { get; set; }
+    public bool Estado { get; set; }
+    public List<OfertaDto> Ofertas { get; set; } = new();
 }
