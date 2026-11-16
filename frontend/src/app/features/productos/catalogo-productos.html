@@ -111,12 +111,12 @@
   } @else {
     <span class="cifras">{{ l.stock }}</span>
     @if (l.stock <= stockBajo) {
-      <span class="badge text-bg-warning ms-1" title="10 unidades o menos">Bajo</span>
+      <span class="badge text-bg-danger ms-1" title="10 unidades o menos">Bajo</span>
     } @else {
       @if (l.stock <= 50) {
         <span class="badge text-bg-warning ms-1" title="menos de 50 unidades">Medio</span>
       } @else {
-        <span class="badge text-bg-warning ms-1" title="más de 50 unidades">Alto</span>
+        <span class="badge text-bg-info ms-1" title="más de 50 unidades">Alto</span>
       }
     } 
   }
