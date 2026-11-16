@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface AjusteInventario {
+  costo: number;
   precio: number;
   stock: number;
 }

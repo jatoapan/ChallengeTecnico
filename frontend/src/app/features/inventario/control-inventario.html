@@ -1,0 +1,166 @@
+<app-encabezado titulo="Control de inventario" descripcion="Existencias, costo y precio de cada lote." />
+
+<app-barra-filtros [grupo]="filtros" idBuscar="buscar-inventario" placeholder="Buscar por producto, proveedor o lote"
+                   [activos]="contarFiltros()" (buscar)="buscarLotes()" (limpiar)="limpiarBusqueda()">
+  <app-campos-filtro-lotes [grupo]="filtros" [proveedores]="proveedores()" />
+</app-barra-filtros>
+
+@if (cargando()) {
+  <div class="tabla-panel text-center py-5 mb-3" role="status">
+    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Cargando inventario…
+  </div>
+} @else if (!resultado()?.items?.length) {
+  <div class="tabla-panel mb-3">
+    @if (hayCriterios()) {
+      <app-estado-vacio icono="bi-search" titulo="Ningún lote coincide con la búsqueda o los filtros"
+                        mensaje="Revise lo que escribió o quite los filtros.">
+        <button type="button" class="btn btn-outline-secondary" (click)="limpiarBusqueda()">Quitar filtros</button>
+      </app-estado-vacio>
+    } @else {
+      <app-estado-vacio icono="bi-boxes" titulo="Aún no hay lotes en inventario"
+                        mensaje="Los lotes se agregan desde Gestión de productos." />
+    }
+  </div>
+} @else {
+  <!-- Móvil: una tarjeta por lote -->
+  <ul class="list-unstyled d-md-none mb-2">
+    @for (l of resultado()?.items; track l.idLote) {
+      <li class="card mb-2">
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <div>
+              <div class="fw-semibold">{{ l.producto }}</div>
+              <div class="small text-body-secondary">{{ l.codigoProducto }} · {{ l.proveedor }}</div>
+            </div>
+            <div class="text-end">
+              <div class="fw-semibold cifras">{{ l.precio | currency }}</div>
+            </div>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mt-2">
+            <div class="d-flex flex-wrap align-items-center gap-2 small">
+              <span class="lote">{{ l.numeroLote }}</span>
+              <ng-container *ngTemplateOutlet="stock; context: { $implicit: l }" />
+              <span class="text-body-secondary cifras">· {{ l.fechaActualizacion | date: 'dd/MM/yy HH:mm' }}</span>
+            </div>
+            <ng-container *ngTemplateOutlet="ajustar; context: { $implicit: l }" />
+          </div>
+        </div>
+      </li>
+    }
+  </ul>
+
+  <!-- Desde md: tabla con una fila por lote -->
+  <div class="tabla-panel table-responsive d-none d-md-block mb-2">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th scope="col">Producto</th>
+          <th scope="col">Proveedor</th>
+          <th scope="col">Lote</th>
+          <th scope="col" class="text-end">Costo</th>
+          <th scope="col" class="text-end">Precio</th>
+          <th scope="col" class="ps-5">Stock</th>
+          <th scope="col">Última actualización</th>
+          <th scope="col" class="text-end"><span class="visually-hidden">Acción</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (l of resultado()?.items; track l.idLote) {
+          <tr>
+            <td>
+              <div>{{ l.producto }}</div>
+              <div class="small text-body-secondary">{{ l.codigoProducto }}</div>
+            </td>
+            <td class="text-nowrap">{{ l.proveedor }}</td>
+            <td><span class="lote">{{ l.numeroLote }}</span></td>
+            <td class="text-end cifras text-nowrap text-body-secondary">{{ l.costo ? (l.costo | currency) : '—' }}</td>
+            <td class="text-end fw-semibold cifras text-nowrap">{{ l.precio | currency }}</td>
+            <td class="text-nowrap ps-5"><ng-container *ngTemplateOutlet="stock; context: { $implicit: l }" /></td>
+            <td class="text-nowrap text-body-secondary cifras">{{ l.fechaActualizacion | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <td class="text-end"><ng-container *ngTemplateOutlet="ajustar; context: { $implicit: l }" /></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (resultado(); as r) {
+  <app-paginacion [pagina]="pagina()" [total]="r.total" [tamanoPagina]="r.tamanoPagina"
+                  (cambiar)="cambiarPagina($event)" />
+}
+
+<ng-template #ajustar let-l>
+  <button type="button" class="btn btn-outline-primary btn-sm text-nowrap" (click)="abrirAjuste(l)"
+          [attr.aria-label]="'Ajustar lote ' + l.numeroLote">
+    <i class="bi bi-sliders me-1" aria-hidden="true"></i>Ajustar
+  </button>
+</ng-template>
+
+<ng-template #stock let-l>
+  @if (l.stock === 0) {
+    <span class="badge text-bg-danger">Sin stock</span>
+  } @else {
+    <span class="cifras">{{ l.stock }}</span>
+    @if (l.stock <= stockBajo) {
+      <span class="badge text-bg-warning ms-1" title="10 unidades o menos">Bajo</span>
+    }
+  }
+</ng-template>
+
+<!-- Campo numérico con botones − y + -->
+<ng-template #campoPaso let-c="control" let-id="id" let-etiqueta="etiqueta" let-paso="paso" let-minimo="minimo" let-actual="actual" let-error="error">
+  <label [for]="id" class="form-label">{{ etiqueta }}</label>
+  <div class="input-group has-validation">
+    <button type="button" class="btn btn-outline-secondary" (click)="cambiar(c, -paso, minimo)"
+            [attr.aria-label]="'Disminuir ' + etiqueta.toLowerCase()">
+      <i class="bi bi-dash-lg" aria-hidden="true"></i>
+    </button>
+    <input [id]="id" type="number" [min]="minimo" [step]="etiqueta === 'Stock' ? 1 : 0.01"
+           class="form-control text-center cifras" [formControl]="c" [class.is-invalid]="invalido(c)">
+    <button type="button" class="btn btn-outline-secondary" (click)="cambiar(c, paso, minimo)"
+            [attr.aria-label]="'Aumentar ' + etiqueta.toLowerCase()">
+      <i class="bi bi-plus-lg" aria-hidden="true"></i>
+    </button>
+    <div class="invalid-feedback">{{ error }}</div>
+  </div>
+  <div class="form-text cifras">Actual: {{ actual }}</div>
+</ng-template>
+
+<!-- Modal: ajustar costo, precio y stock -->
+@if (ajuste(); as a) {
+  <app-modal titulo="Ajustar inventario" (cerrar)="ajuste.set(null)">
+    <form [formGroup]="formularioAjuste" (ngSubmit)="guardarAjuste()" novalidate>
+      <div class="modal-body">
+        <p class="text-body-secondary small mb-3">
+          {{ a.producto }} · {{ a.proveedor }} · <span class="lote">{{ a.numeroLote }}</span>
+        </p>
+        <div class="row g-3">
+          <div class="col-12">
+            <ng-container *ngTemplateOutlet="campoPaso; context: { control: formularioAjuste.controls.stock, id: 'ajuste-stock',
+              etiqueta: 'Stock', paso: 1, minimo: 0, actual: a.stock, error: 'Mínimo 0.' }" />
+          </div>
+          <div class="col-12 col-sm-6">
+            <ng-container *ngTemplateOutlet="campoPaso; context: { control: formularioAjuste.controls.costo, id: 'ajuste-costo',
+              etiqueta: 'Costo', paso: 1, minimo: 0, actual: (a.costo | currency), error: 'Mínimo 0.' }" />
+          </div>
+          <div class="col-12 col-sm-6">
+            <ng-container *ngTemplateOutlet="campoPaso; context: { control: formularioAjuste.controls.precio, id: 'ajuste-precio',
+              etiqueta: 'Precio', paso: 1, minimo: 0.01, actual: (a.precio | currency), error: 'Debe ser mayor a 0.' }" />
+          </div>
+        </div>
+        @let valores = formularioAjuste.getRawValue();
+        @if (margen(valores.costo, valores.precio); as m) {
+          <p class="small mt-3 mb-0" [class.text-danger]="m.monto < 0" aria-live="polite">
+            Margen resultante: {{ m.monto | currency }} por unidad ({{ m.porcentaje | number: '1.0-0' }} %)
+            @if (m.monto < 0) { · se vendería bajo el costo }
+          </p>
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" (click)="ajuste.set(null)">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar ajuste</button>
+      </div>
+    </form>
+  </app-modal>
+}
