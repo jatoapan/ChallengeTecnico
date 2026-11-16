@@ -1,3 +1,219 @@
-/* You can add global styles to this file, and also import other style files */
-@import 'bootstrap/dist/css/bootstrap.min.css';
+// =============================================================================
+// Sistema de diseño "Bodega"
+// Inspirado en un almacén: pizarra de estantería, azul acero, ámbar de etiqueta de lote.
+// Bootstrap se compila desde Sass para que estos colores lleguen a todos sus componentes.
+// =============================================================================
+
+// Fuente autoalojada (no depende de Google Fonts).
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-sans/700.css';
+
+// --- Paleta ------------------------------------------------------------------
+$pizarra: #1e2a33;   // menú lateral, títulos y texto principal
+$fondo: #eef1f0;     // fondo de la aplicación, gris frío
+$acero: #2f5d8a;     // acción principal
+$ambar: #d99a1e;     // stock bajo y etiquetas de lote
+$verde: #2a7149;     // precio más bajo, éxito
+$rojo: #b42318;      // eliminar y errores
+$gris: #56636d;      // acciones secundarias (Cancelar, Volver)
+
+// --- Variables de Bootstrap --------------------------------------------------
+@import 'bootstrap/scss/functions';
+
+$primary: $acero;
+$success: $verde;
+$danger: $rojo;
+$warning: $ambar;
+$dark: $pizarra;
+$secondary: $gris;
+
+$body-bg: $fondo;
+$body-color: $pizarra;
+$link-color: $acero;
+
+$font-family-sans-serif: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+$headings-font-weight: 600;
+$headings-color: $pizarra;
+
+// Esquinas algo más rectas: estética de estantería, no de app de consumo.
+$border-radius: 0.25rem;
+$border-radius-sm: 0.2rem;
+$border-radius-lg: 0.375rem;
+
+$card-border-color: rgba($pizarra, 0.12);
+$modal-content-bg: #fff;
+// Superficies de trabajo en blanco sobre el fondo gris: campos y tablas.
+$input-bg: #fff;
+$form-select-bg: #fff;
+$table-bg: #fff;
+$table-hover-bg-factor: 0.04;
+$table-border-color: rgba($pizarra, 0.12);
+$table-th-font-weight: 600;
+
+// Bootstrap elige texto claro u oscuro sobre cada color para cumplir WCAG AA (4.5:1).
+// Todos los colores de la paleta se verificaron con axe-core.
+$min-contrast-ratio: 4.5;
+
+@import 'bootstrap/scss/bootstrap';
 @import 'bootstrap-icons/font/bootstrap-icons.css';
+
+// --- Estilos base -------------------------------------------------------------
+
+// Cifras tabulares: precios y stock quedan alineados en columnas.
+.table,
+.cifras {
+  font-variant-numeric: tabular-nums;
+}
+
+// Encabezados de tabla discretos, como las etiquetas de una estantería.
+.table > thead th {
+  color: rgba($pizarra, 0.75);
+  font-size: 0.875rem;
+  background-color: mix($fondo, #fff, 40%);
+}
+
+// Foco visible y consistente para teclado.
+:focus-visible {
+  outline: 2px solid $acero;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+// --- Componentes propios ---------------------------------------------------------
+
+// Contenedor de tablas: superficie blanca con borde y esquinas, igual en todas las pantallas.
+.tabla-panel {
+  background: #fff;
+  border: 1px solid rgba($pizarra, 0.12);
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+
+  > .table,
+  > .table-responsive > .table {
+    margin-bottom: 0;
+  }
+
+  .table > :last-child > tr:last-child > * {
+    border-bottom: 0;
+  }
+}
+
+// Número de lote con aspecto de etiqueta pegada en la caja.
+.lote {
+  display: inline-block;
+  padding: 0 0.375rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: rgba($pizarra, 0.85);
+  background: #fff;
+  border: 1px solid rgba($pizarra, 0.25);
+  border-radius: $border-radius-sm;
+  white-space: nowrap;
+}
+
+// Franja de totales: una pieza dividida en celdas (no tarjetas sueltas). En móvil, dos columnas.
+// Por defecto las celdas se reparten solas; .totales-resumen fija el diseño del Panel principal.
+.totales {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  }
+
+  &.totales-resumen {
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  > div {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba($pizarra, 0.1);
+    border-right: 1px solid rgba($pizarra, 0.1);
+    // La franja de color a la izquierda marca qué cifras piden atención.
+    border-left: 3px solid transparent;
+  }
+
+  dt {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: rgba($pizarra, 0.75);
+  }
+
+  dd {
+    margin: 0.25rem 0 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .alerta-ambar {
+    border-left-color: $ambar;
+  }
+
+  .alerta-roja {
+    border-left-color: $rojo;
+  }
+}
+
+
+// Botón de solo icono para acciones de tabla (Editar, Desactivar…). El nombre va en title y aria-label.
+.btn-icono {
+  --bs-btn-padding-x: 0;
+  --bs-btn-padding-y: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  color: $acero;
+  background: #fff;
+  border: 1px solid rgba($pizarra, 0.18);
+  border-radius: $border-radius;
+
+  &:hover {
+    color: #fff;
+    background: $acero;
+    border-color: $acero;
+  }
+
+  &.peligro {
+    color: $rojo;
+
+    &:hover {
+      color: #fff;
+      background: $rojo;
+      border-color: $rojo;
+    }
+  }
+
+  &.exito {
+    color: $verde;
+
+    &:hover {
+      color: #fff;
+      background: $verde;
+      border-color: $verde;
+    }
+  }
+}
+
+// Insignia de estado "Activo": verde suave con texto oscuro (contraste AA). "Inactivo" usa text-bg-secondary.
+.estado-activo {
+  color: darken($verde, 8%);
+  background-color: color-mix(in srgb, $verde 14%, #fff);
+  border: 1px solid color-mix(in srgb, $verde 35%, #fff);
+  font-weight: 600;
+}
