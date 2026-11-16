@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using InventarioProductos.API.Services;
 using Microsoft.OpenApi;
 using Serilog;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +18,16 @@ builder.Host.UseSerilog((contexto, configuracion) =>
     configuracion.ReadFrom.Configuration(contexto.Configuration));
 
 // Add services to the container.
+
+// Detrás de Nginx (despliegue en Docker) la API recibe la IP real del usuario en X-Forwarded-For.
+// Sin esto la auditoría guardaría la IP del contenedor de Nginx. Se confía en cualquier proxy porque
+// el puerto de la API no se publica fuera de la red de Docker: solo Nginx puede llegar a ella.
+builder.Services.Configure<ForwardedHeadersOptions>(opciones =>
+{
+    opciones.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    opciones.KnownIPNetworks.Clear();
+    opciones.KnownProxies.Clear();
+});
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -145,6 +156,8 @@ using (var scope = app.Services.CreateScope())
     await SembradoUsuarios.EjecutarAsync(context);
 }
 
+app.UseForwardedHeaders();
+
 app.UseSerilogRequestLogging();
 
 // Middleware oficial de errores: llama a ManejadorErroresGlobal cuando algo falla más adelante en el pipeline.
@@ -153,13 +166,18 @@ app.UseExceptionHandler();
 app.UseCors("PermitirAngular");
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Swagger siempre en desarrollo; en un despliegue se activa con Swagger:Habilitado=true.
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Swagger:Habilitado"))
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// En Docker el tráfico llega por HTTP desde Nginx: allí se desactiva con Https:Redirigir=false.
+if (app.Configuration.GetValue("Https:Redirigir", true))
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 
