@@ -5,11 +5,15 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>69682a62-7de7-45c3-804a-fe0ec7bebc7d</UserSecretsId>
+    <!-- Genera el XML con los comentarios /// para que Swagger los muestre -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- 1591: no exigir comentario en cada miembro público -->
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.*" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.15" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.15" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.15" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />

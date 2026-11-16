@@ -426,3 +426,12 @@ FodyWeavers.xsd
 
 # Official VS Code C# Dev Kit Extension exclusion
 #*.lscache
+
+# Capturas y logs de Playwright MCP
+.playwright-mcp/
+
+# Documentos locales: notas de trabajo y enunciado de la prueba
+CLAUDE.md
+docs/
+/Challenge*.pdf
+.referencia/

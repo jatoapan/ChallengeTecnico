@@ -1,6 +1,25 @@
-@InventarioProductos.API_HostAddress = http://localhost:5209
+# Peticiones de ejemplo (extensión REST Client de VS Code o Visual Studio).
+# 1. Ejecuta el login, copia el token de la respuesta y pégalo en @token.
+@api = http://localhost:5209/api
+@token = pegar-aqui-el-token
 
-GET {{InventarioProductos.API_HostAddress}}/weatherforecast/
-Accept: application/json
+### Login
+POST {{api}}/Auth/login
+Content-Type: application/json
 
-###
+{
+  "usuario": "admin",
+  "password": "Admin123*"
+}
+
+### Listar productos
+GET {{api}}/Productos?pagina=1&tamanoPagina=5
+Authorization: Bearer {{token}}
+
+### Matriz de precios
+GET {{api}}/Productos/matriz-precios
+Authorization: Bearer {{token}}
+
+### Historial de auditoría (solo Administrador)
+GET {{api}}/Auditoria
+Authorization: Bearer {{token}}
